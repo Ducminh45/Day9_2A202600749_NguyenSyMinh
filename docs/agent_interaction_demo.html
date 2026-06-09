@@ -1,0 +1,403 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Legal Multi-Agent Demo</title>
+  <style>
+    :root {
+      --bg: #f6f7f9;
+      --ink: #18212f;
+      --muted: #657287;
+      --line: #d8dde6;
+      --law: #2f6f73;
+      --tax: #9b5d21;
+      --comp: #5c5f9e;
+      --privacy: #9a3f62;
+      --customer: #305c9d;
+      --ok: #1f8a5b;
+      --warn: #c77700;
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      color: var(--ink);
+      background: var(--bg);
+      min-height: 100vh;
+    }
+
+    .shell {
+      width: min(1180px, calc(100vw - 32px));
+      margin: 0 auto;
+      padding: 24px 0 32px;
+    }
+
+    header {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 16px;
+      align-items: end;
+      border-bottom: 1px solid var(--line);
+      padding-bottom: 18px;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: 32px;
+      line-height: 1.1;
+      letter-spacing: 0;
+    }
+
+    .subtitle {
+      margin: 8px 0 0;
+      color: var(--muted);
+      font-size: 15px;
+    }
+
+    .controls {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    button, select {
+      border: 1px solid var(--line);
+      background: white;
+      color: var(--ink);
+      min-height: 38px;
+      border-radius: 6px;
+      padding: 0 12px;
+      font: inherit;
+      cursor: pointer;
+    }
+
+    button.primary {
+      background: #1d4f55;
+      border-color: #1d4f55;
+      color: white;
+    }
+
+    button:disabled {
+      opacity: .55;
+      cursor: wait;
+    }
+
+    .layout {
+      display: grid;
+      grid-template-columns: 1.35fr .85fr;
+      gap: 18px;
+      margin-top: 20px;
+    }
+
+    .workspace, .side {
+      display: grid;
+      gap: 14px;
+    }
+
+    .panel {
+      background: white;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 16px;
+    }
+
+    .question textarea {
+      width: 100%;
+      min-height: 84px;
+      resize: vertical;
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      padding: 12px;
+      color: var(--ink);
+      font: inherit;
+      line-height: 1.45;
+    }
+
+    .map {
+      position: relative;
+      display: grid;
+      grid-template-columns: repeat(5, minmax(110px, 1fr));
+      gap: 12px;
+      min-height: 210px;
+      align-items: center;
+    }
+
+    .agent {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 14px 12px;
+      min-height: 132px;
+      background: #fbfcfe;
+      display: grid;
+      align-content: start;
+      gap: 8px;
+      position: relative;
+      transition: border-color .2s ease, box-shadow .2s ease, transform .2s ease;
+    }
+
+    .agent.active {
+      transform: translateY(-2px);
+      box-shadow: 0 12px 28px rgba(25, 36, 55, .12);
+      border-color: currentColor;
+    }
+
+    .agent.done::after {
+      content: "";
+      position: absolute;
+      right: 10px;
+      top: 10px;
+      width: 9px;
+      height: 9px;
+      border-radius: 99px;
+      background: var(--ok);
+    }
+
+    .agent.customer { color: var(--customer); }
+    .agent.law { color: var(--law); }
+    .agent.tax { color: var(--tax); }
+    .agent.comp { color: var(--comp); }
+    .agent.privacy { color: var(--privacy); }
+
+    .agent strong {
+      color: var(--ink);
+      font-size: 15px;
+    }
+
+    .agent span {
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.35;
+    }
+
+    .meter {
+      display: grid;
+      gap: 8px;
+    }
+
+    .bar {
+      height: 12px;
+      background: #edf0f5;
+      border-radius: 99px;
+      overflow: hidden;
+    }
+
+    .bar > i {
+      display: block;
+      height: 100%;
+      width: 0%;
+      background: linear-gradient(90deg, #2f6f73, #9a3f62);
+      transition: width .25s ease;
+    }
+
+    .metrics {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
+    }
+
+    .metric {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 12px;
+      background: #fbfcfe;
+    }
+
+    .metric b {
+      display: block;
+      font-size: 24px;
+      line-height: 1;
+      margin-bottom: 7px;
+    }
+
+    .metric span {
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .timeline {
+      display: grid;
+      gap: 8px;
+      max-height: 362px;
+      overflow: auto;
+      padding-right: 4px;
+    }
+
+    .event {
+      border-left: 3px solid var(--line);
+      padding: 8px 10px;
+      background: #fbfcfe;
+      border-radius: 0 6px 6px 0;
+      font-size: 13px;
+      line-height: 1.35;
+    }
+
+    .event b {
+      display: block;
+      font-size: 12px;
+      color: var(--muted);
+      margin-bottom: 3px;
+    }
+
+    .answer {
+      white-space: pre-wrap;
+      line-height: 1.45;
+      color: #263244;
+      min-height: 154px;
+    }
+
+    @media (max-width: 860px) {
+      header, .layout { grid-template-columns: 1fr; }
+      .map { grid-template-columns: 1fr; }
+      .metrics { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <main class="shell">
+    <header>
+      <div>
+        <h1>Legal Multi-Agent Interaction</h1>
+        <p class="subtitle">Stage 4/5 flow: Customer → Law → Tax + Compliance + Privacy → Aggregate</p>
+      </div>
+      <div class="controls">
+        <select id="mode" aria-label="Routing mode">
+          <option value="baseline">Baseline routing</option>
+          <option value="fast">FAST_ROUTING=1</option>
+        </select>
+        <button id="reset">Reset</button>
+        <button id="run" class="primary">Run Demo</button>
+      </div>
+    </header>
+
+    <section class="layout">
+      <div class="workspace">
+        <section class="panel question">
+          <textarea id="question">If a company breaks a contract, avoids taxes, and leaks customer data, what are the legal, tax, compliance, and privacy consequences?</textarea>
+        </section>
+
+        <section class="panel">
+          <div class="map" id="map">
+            <div class="agent customer" data-agent="customer"><strong>Customer Agent</strong><span>Receives the user request and delegates substantive legal questions.</span></div>
+            <div class="agent law" data-agent="law"><strong>Law Agent</strong><span>Performs lead legal analysis and routes specialist work.</span></div>
+            <div class="agent tax" data-agent="tax"><strong>Tax Agent</strong><span>IRS, evasion, offshore income, penalties.</span></div>
+            <div class="agent comp" data-agent="comp"><strong>Compliance Agent</strong><span>SEC, SOX, FCPA, AML, corporate controls.</span></div>
+            <div class="agent privacy" data-agent="privacy"><strong>Privacy Agent</strong><span>GDPR, CCPA, consent, breach notification.</span></div>
+          </div>
+        </section>
+
+        <section class="panel">
+          <div class="meter">
+            <div class="bar"><i id="progress"></i></div>
+            <div class="metrics">
+              <div class="metric"><b id="total">0.0s</b><span>Total simulated latency</span></div>
+              <div class="metric"><b id="calls">0</b><span>LLM/A2A steps</span></div>
+              <div class="metric"><b id="saved">0.0s</b><span>Saved by fast routing</span></div>
+            </div>
+          </div>
+        </section>
+      </div>
+
+      <aside class="side">
+        <section class="panel">
+          <div class="timeline" id="timeline"></div>
+        </section>
+        <section class="panel">
+          <div id="answer" class="answer">Ready.</div>
+        </section>
+      </aside>
+    </section>
+  </main>
+
+  <script>
+    const runButton = document.querySelector("#run");
+    const resetButton = document.querySelector("#reset");
+    const modeSelect = document.querySelector("#mode");
+    const progress = document.querySelector("#progress");
+    const timeline = document.querySelector("#timeline");
+    const answer = document.querySelector("#answer");
+    const total = document.querySelector("#total");
+    const calls = document.querySelector("#calls");
+    const saved = document.querySelector("#saved");
+    const agents = new Map([...document.querySelectorAll(".agent")].map((el) => [el.dataset.agent, el]));
+
+    const baseSteps = [
+      ["customer", "Customer Agent receives the A2A message and opens a trace.", 2.3],
+      ["customer", "Customer Agent calls delegate_to_legal_agent.", 3.8],
+      ["law", "Law Agent analyzes contract and liability exposure.", 8.5],
+      ["law", "Router LLM decides tax + compliance + privacy specialists are needed.", 5.1],
+      ["tax", "Tax Agent reviews evasion and offshore income penalties.", 9.6],
+      ["comp", "Compliance Agent reviews SEC/SOX/FCPA and controls.", 8.9],
+      ["privacy", "Privacy Agent reviews GDPR/CCPA and breach duties.", 8.2],
+      ["law", "Aggregator synthesizes specialist reports.", 7.7],
+      ["customer", "Customer Agent returns final response.", 2.5],
+    ];
+
+    const fastSteps = baseSteps.filter((_, index) => index !== 3);
+
+    function reset() {
+      timeline.innerHTML = "";
+      answer.textContent = "Ready.";
+      progress.style.width = "0%";
+      total.textContent = "0.0s";
+      calls.textContent = "0";
+      saved.textContent = "0.0s";
+      for (const el of agents.values()) el.classList.remove("active", "done");
+      runButton.disabled = false;
+    }
+
+    function addEvent(label, text) {
+      const item = document.createElement("div");
+      item.className = "event";
+      item.innerHTML = `<b>${label}</b>${text}`;
+      timeline.prepend(item);
+    }
+
+    function sleep(ms) {
+      return new Promise((resolve) => setTimeout(resolve, ms));
+    }
+
+    async function runDemo() {
+      reset();
+      runButton.disabled = true;
+      const fast = modeSelect.value === "fast";
+      const steps = fast ? fastSteps : baseSteps;
+      const baselineTotal = baseSteps.reduce((sum, step) => sum + step[2], 0);
+      const selectedTotal = steps.reduce((sum, step) => sum + step[2], 0);
+      let elapsed = 0;
+
+      addEvent("trace_id=demo-" + Math.random().toString(16).slice(2, 8), fast ? "FAST_ROUTING enabled." : "Baseline routing enabled.");
+
+      for (let index = 0; index < steps.length; index++) {
+        const [agent, text, seconds] = steps[index];
+        for (const el of agents.values()) el.classList.remove("active");
+        agents.get(agent).classList.add("active");
+        addEvent(agent.toUpperCase(), text);
+        await sleep(520);
+        agents.get(agent).classList.add("done");
+        elapsed += seconds;
+        progress.style.width = `${Math.round(((index + 1) / steps.length) * 100)}%`;
+        total.textContent = `${elapsed.toFixed(1)}s`;
+        calls.textContent = String(index + 1);
+        saved.textContent = `${Math.max(0, baselineTotal - selectedTotal).toFixed(1)}s`;
+      }
+
+      answer.textContent = [
+        "Final synthesis:",
+        "- Contract breach may create damages, injunction, and attorney-fee exposure.",
+        "- Tax evasion can trigger back taxes, civil fraud penalties, and criminal referral.",
+        "- Compliance review should cover reporting, controls, board oversight, and records.",
+        "- Customer-data leakage adds GDPR/CCPA notice, consent, security, and regulator risk.",
+        "",
+        fast ? "Optimization demo: keyword routing removed one LLM routing call." : "Baseline demo: routing uses an LLM decision before specialist dispatch."
+      ].join("\n");
+      runButton.disabled = false;
+    }
+
+    runButton.addEventListener("click", runDemo);
+    resetButton.addEventListener("click", reset);
+  </script>
+</body>
+</html>

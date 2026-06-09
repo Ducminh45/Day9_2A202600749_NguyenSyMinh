@@ -6,6 +6,7 @@ Sends a legal question to the Customer Agent and prints the response.
 import asyncio
 import os
 import sys
+import time
 
 import httpx
 from dotenv import load_dotenv
@@ -21,6 +22,7 @@ QUESTION = (
 
 
 async def main() -> None:
+    total_start = time.perf_counter()
     print(f"Connecting to Customer Agent at {CUSTOMER_AGENT_URL}")
     print(f"Question: {QUESTION}")
     print("-" * 60)
@@ -28,6 +30,7 @@ async def main() -> None:
     async with httpx.AsyncClient(timeout=300.0) as http_client:
         # Resolve agent card
         card_url = f"{CUSTOMER_AGENT_URL}/.well-known/agent.json"
+        discovery_start = time.perf_counter()
         try:
             card_resp = await http_client.get(card_url)
             card_resp.raise_for_status()
@@ -41,8 +44,10 @@ async def main() -> None:
         from a2a.client import A2AClient
         from uuid import uuid4
 
+        discovery_seconds = time.perf_counter() - discovery_start
         agent_card = AgentCard.model_validate(card_resp.json())
         print(f"Connected to agent: {agent_card.name} v{agent_card.version}")
+        print(f"Discovery latency: {discovery_seconds:.2f}s")
         print("-" * 60)
 
         # Build the legacy A2AClient
@@ -61,7 +66,9 @@ async def main() -> None:
         )
 
         print("Sending request (this may take 30-60s while agents chain)...\n")
+        request_start = time.perf_counter()
         response = await client.send_message(request)
+        request_seconds = time.perf_counter() - request_start
 
         # Parse response
         result_text = ""
@@ -91,6 +98,15 @@ async def main() -> None:
         else:
             print("No text response received. Raw response:")
             print(response)
+
+        total_seconds = time.perf_counter() - total_start
+        print("-" * 60)
+        print(f"A2A request latency: {request_seconds:.2f}s")
+        print(f"Total client latency: {total_seconds:.2f}s")
+        print(
+            "Latency tip: set FAST_ROUTING=1 before starting law_agent to skip "
+            "the routing LLM call and route specialists by keyword."
+        )
 
 
 if __name__ == "__main__":

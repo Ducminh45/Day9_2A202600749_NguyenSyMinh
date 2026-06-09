@@ -1,6 +1,9 @@
-"""Bài Tập 2: Thêm Tools và Knowledge Base
+"""Bai Tap 2: Them Tools va Knowledge Base.
 
-Hoàn thành các TODO để thêm tool và knowledge base entry mới.
+File da hoan thanh cac TODO:
+- Them knowledge base entry ve luat lao dong Viet Nam.
+- Them tool check_statute_of_limitations.
+- Bind va execute tool moi trong manual tool loop.
 """
 
 import asyncio
@@ -15,7 +18,7 @@ from langchain_core.tools import tool
 
 from common.llm import get_llm
 
-# Knowledge base
+
 LEGAL_KNOWLEDGE = [
     {
         "id": "ucc_breach",
@@ -26,69 +29,74 @@ LEGAL_KNOWLEDGE = [
             "(4) cover damages. Statute of limitations is typically 4 years (UCC § 2-725)."
         ),
     },
-    # TODO: Thêm entry về luật lao động Việt Nam
-    # Gợi ý: id="labor_law", keywords=["lao động", "sa thải", ...], text="..."
+    {
+        "id": "labor_law",
+        "keywords": ["lao động", "sa thải", "hợp đồng lao động", "labor", "termination"],
+        "text": (
+            "Theo Bộ luật Lao động Việt Nam 2019, người sử dụng lao động có thể "
+            "đơn phương chấm dứt hợp đồng trong các trường hợp: (1) người lao động "
+            "thường xuyên không hoàn thành công việc; (2) bị ốm đau, tai nạn đã điều trị "
+            "12 tháng chưa khỏi; (3) thiên tai, hỏa hoạn; (4) người lao động đủ tuổi nghỉ hưu."
+        ),
+    },
 ]
 
 
 @tool
 def search_legal_knowledge(query: str) -> str:
-    """Tìm kiếm trong knowledge base pháp lý."""
+    """Tim kiem trong knowledge base phap ly."""
     query_lower = query.lower()
     for entry in LEGAL_KNOWLEDGE:
         if any(kw in query_lower for kw in entry["keywords"]):
             return f"[{entry['id']}] {entry['text']}"
-    return "Không tìm thấy thông tin liên quan."
+    return "Khong tim thay thong tin lien quan."
 
 
-# TODO: Tạo tool check_statute_of_limitations
-# Gợi ý: nhận case_type (str), trả về thời hiệu khởi kiện
-# @tool
-# def check_statute_of_limitations(case_type: str) -> str:
-#     """Kiểm tra thời hiệu khởi kiện."""
-#     # YOUR CODE HERE
-#     pass
+@tool
+def check_statute_of_limitations(case_type: str) -> str:
+    """Kiem tra thoi hieu khoi kien theo loai vu an.
+
+    Args:
+        case_type: Loai vu an (contract, tort, property)
+    """
+    limits = {
+        "contract": "4 năm (UCC § 2-725)",
+        "tort": "2-3 năm tùy bang",
+        "property": "5 năm",
+    }
+    return limits.get(case_type.lower(), "Khong xac dinh")
 
 
 async def main():
     load_dotenv()
     llm = get_llm()
-    
-    # TODO: Thêm tool mới vào danh sách
-    tools = [search_legal_knowledge]  # Thêm check_statute_of_limitations vào đây
+
+    tools = [search_legal_knowledge, check_statute_of_limitations]
     llm_with_tools = llm.bind_tools(tools)
-    
+
     question = "Thời hiệu khởi kiện vụ vi phạm hợp đồng là bao lâu?"
-    
+
     messages = [
         SystemMessage(content="Bạn là chuyên gia pháp lý. Sử dụng tools để tra cứu thông tin."),
         HumanMessage(content=question),
     ]
-    
+
     print(f"Câu hỏi: {question}\n")
-    
-    # First LLM call - decide which tools to use
+
     response = await llm_with_tools.ainvoke(messages)
     messages.append(response)
-    
-    # Execute tools if requested
+
     if response.tool_calls:
+        tool_map = {tool_item.name: tool_item for tool_item in tools}
         for tool_call in response.tool_calls:
-            print(f"🔧 Gọi tool: {tool_call['name']}")
-            tool_result = None
-            
-            if tool_call["name"] == "search_legal_knowledge":
-                tool_result = search_legal_knowledge.invoke(tool_call["args"])
-            # TODO: Thêm xử lý cho check_statute_of_limitations
-            
-            if tool_result:
-                messages.append(ToolMessage(content=tool_result, tool_call_id=tool_call["id"]))
-        
-        # Second LLM call - synthesize final answer
+            print(f"Gọi tool: {tool_call['name']}")
+            tool_result = await tool_map[tool_call["name"]].ainvoke(tool_call["args"])
+            messages.append(ToolMessage(content=tool_result, tool_call_id=tool_call["id"]))
+
         final_response = await llm_with_tools.ainvoke(messages)
-        print(f"\n✅ Kết quả:\n{final_response.content}")
+        print(f"\nKết quả:\n{final_response.content}")
     else:
-        print(f"\n✅ Kết quả:\n{response.content}")
+        print(f"\nKết quả:\n{response.content}")
 
 
 if __name__ == "__main__":

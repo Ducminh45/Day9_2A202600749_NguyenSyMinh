@@ -11,6 +11,7 @@ from __future__ import annotations
 
 import json
 import logging
+import os
 from typing import Annotated, TypedDict
 
 from langchain_core.messages import HumanMessage, SystemMessage
@@ -78,6 +79,20 @@ async def check_routing(state: LawState) -> dict:
     if depth >= MAX_DELEGATION_DEPTH:
         logger.info("Max delegation depth reached (%d); skipping sub-agents", depth)
         return {"needs_tax": False, "needs_compliance": False}
+
+    if os.getenv("FAST_ROUTING", "").lower() in {"1", "true", "yes"}:
+        question_lower = state["question"].lower()
+        needs_tax = any(kw in question_lower for kw in ["tax", "irs", "thuế", "evasion", "offshore"])
+        needs_compliance = any(
+            kw in question_lower
+            for kw in ["compliance", "sec", "regulation", "sox", "aml", "fcpa", "privacy", "data"]
+        )
+        logger.info(
+            "Fast routing decision: needs_tax=%s needs_compliance=%s",
+            needs_tax,
+            needs_compliance,
+        )
+        return {"needs_tax": needs_tax, "needs_compliance": needs_compliance}
 
     llm = get_llm()
     messages = [

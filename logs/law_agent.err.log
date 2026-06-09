@@ -1,0 +1,22 @@
+2026-06-09 17:25:21,258 [law_agent] INFO HTTP Request: POST http://localhost:10000/register "HTTP/1.1 200 OK"
+2026-06-09 17:25:21,262 [law_agent] INFO Registered with registry (attempt 1)
+2026-06-09 17:25:21,273 [law_agent] INFO Law Agent listening on port 10101
+INFO:     Started server process [15656]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+INFO:     Uvicorn running on http://0.0.0.0:10101 (Press CTRL+C to quit)
+2026-06-09 17:25:36,261 [law_agent] WARNING Deprecated agent card endpoint '/.well-known/agent.json' accessed. Please use '/.well-known/agent-card.json' instead. This endpoint will be removed in a future version.
+2026-06-09 17:25:36,280 [law_agent] INFO LawAgent executing | task=5c5d61af-01ea-4145-a819-c5a111652da7 context=9b743c19-139e-45b8-b998-29f9b7785b83 trace=9a063ad6-0f0d-4833-b909-ee84438c8240 depth=1
+2026-06-09 17:25:36,296 [law_agent] INFO Task not found or task_id not set. Creating new task for event (task_id: 5c5d61af-01ea-4145-a819-c5a111652da7, context_id: 9b743c19-139e-45b8-b998-29f9b7785b83).
+2026-06-09 17:25:57,620 [law_agent] INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-09 17:25:59,046 [law_agent] INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-09 17:25:59,073 [law_agent] INFO Routing decision: needs_tax=True needs_compliance=True
+2026-06-09 17:26:05,311 [law_agent] INFO HTTP Request: GET http://localhost:10000/discover/tax_question "HTTP/1.1 200 OK"
+2026-06-09 17:26:06,409 [law_agent] INFO HTTP Request: GET http://localhost:10000/discover/compliance_question "HTTP/1.1 200 OK"
+2026-06-09 17:26:07,426 [law_agent] INFO HTTP Request: GET http://localhost:10102/.well-known/agent.json "HTTP/1.1 200 OK"
+2026-06-09 17:26:07,698 [law_agent] INFO HTTP Request: GET http://localhost:10103/.well-known/agent.json "HTTP/1.1 200 OK"
+2026-06-09 17:26:20,343 [law_agent] INFO HTTP Request: POST http://localhost:10102 "HTTP/1.1 200 OK"
+2026-06-09 17:26:20,346 [law_agent] INFO Tax Agent returned 2098 chars
+2026-06-09 17:26:27,135 [law_agent] INFO HTTP Request: POST http://localhost:10103 "HTTP/1.1 200 OK"
+2026-06-09 17:26:27,139 [law_agent] INFO Compliance Agent returned 3412 chars
+2026-06-09 17:26:41,946 [law_agent] INFO HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
